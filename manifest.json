@@ -1,0 +1,10 @@
+{
+  "name": "Sabaq Voice Attendance",
+  "short_name": "SabaqVoice",
+  "start_url": "./",
+  "display": "standalone",
+  "theme_color": "#2563eb",
+  "background_color": "#ffffff",
+  "description": "Offline voice-first attendance capture for classrooms.",
+  "icons": []
+}

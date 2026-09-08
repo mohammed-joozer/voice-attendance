@@ -1,457 +1,226 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Voice Attendance | Neumorphic Engine</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg: #e2e8f0;
-            --surface: #e2e8f0;
-            --shadow-light: #ffffff;
-            --shadow-dark: #b8c2cc;
-            --cyan-primary: #06b6d4;
-            --cyan-glow: rgba(6, 182, 212, 0.4);
-            --cyan-light: #e0f2fe;
-            --text-primary: #1e293b;
-            --text-secondary: #64748b;
-            --danger: #ef4444;
-            --success: #10b981;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        body {
-            background-color: var(--bg);
-            min-height: 100dvh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 16px;
-            color: var(--text-primary);
-        }
-
-        .container {
-            width: 100%;
-            max-width: 420px;
-            background: var(--surface);
-            border-radius: 32px;
-            padding: 24px;
-            box-shadow: 
-                16px 16px 32px var(--shadow-dark),
-                -16px -16px 32px var(--shadow-light);
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .header-card {
-            background: var(--surface);
-            padding: 18px 20px;
-            border-radius: 20px;
-            box-shadow: 
-                inset 4px 4px 8px var(--shadow-dark),
-                inset -4px -4px 8px var(--shadow-light);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .brand-info h1 {
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--text-primary);
-            letter-spacing: -0.5px;
-        }
-
-        .brand-info p {
-            font-size: 12px;
-            color: var(--text-secondary);
-            font-weight: 500;
-        }
-
-        .date-pill {
-            background: var(--cyan-light);
-            color: var(--cyan-primary);
-            padding: 8px 14px;
-            border-radius: 50px;
-            font-size: 12px;
-            font-weight: 700;
-            box-shadow: 
-                3px 3px 6px var(--shadow-dark),
-                -3px -3px 6px var(--shadow-light);
-        }
-
-        .live-status-bar {
-            background: var(--surface);
-            padding: 14px;
-            border-radius: 16px;
-            box-shadow: 
-                6px 6px 12px var(--shadow-dark),
-                -6px -6px 12px var(--shadow-light);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .status-badge {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text-secondary);
-        }
-
-        .pulse-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: var(--text-secondary);
-            transition: all 0.3s ease;
-        }
-
-        .status-badge.active .pulse-dot {
-            background: var(--cyan-primary);
-            box-shadow: 0 0 10px var(--cyan-glow);
-            animation: pulse 1.2s infinite ease-in-out;
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(0.9); opacity: 0.8; }
-            50% { transform: scale(1.3); opacity: 1; }
-            100% { transform: scale(0.9); opacity: 0.8; }
-        }
-
-        .live-stream-text {
-            font-size: 16px;
-            font-weight: 700;
-            color: var(--cyan-primary);
-            letter-spacing: 2px;
-            max-width: 180px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            text-align: right;
-        }
-
-        .textarea-recessed {
-            background: var(--surface);
-            border-radius: 20px;
-            padding: 14px;
-            box-shadow: 
-                inset 6px 6px 12px var(--shadow-dark),
-                inset -6px -6px 12px var(--shadow-light);
-        }
-
-        textarea {
-            width: 100%;
-            height: 200px;
-            background: transparent;
-            border: none;
-            outline: none;
-            color: var(--text-primary);
-            font-size: 17px;
-            font-weight: 600;
-            line-height: 1.7;
-            letter-spacing: 1.5px;
-            resize: none;
-        }
-
-        textarea::placeholder {
-            color: var(--text-secondary);
-            opacity: 0.6;
-            font-weight: 400;
-        }
-
-        .controls-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 14px;
-        }
-
-        .btn {
-            border: none;
-            outline: none;
-            background: var(--surface);
-            padding: 14px 18px;
-            border-radius: 50px;
-            font-size: 13px;
-            font-weight: 700;
-            color: var(--text-primary);
-            cursor: pointer;
-            box-shadow: 
-                6px 6px 12px var(--shadow-dark),
-                -6px -6px 12px var(--shadow-light);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            transition: all 0.15s ease;
-        }
-
-        .btn:active {
-            box-shadow: 
-                inset 4px 4px 8px var(--shadow-dark),
-                inset -4px -4px 8px var(--shadow-light);
-            transform: translateY(1px);
-        }
-
-        .btn-start {
-            color: var(--cyan-primary);
-        }
-
-        .btn-stop {
-            color: var(--danger);
-        }
-
-        .btn-full {
-            grid-column: span 2;
-        }
-
-        .instructions-card {
-            background: var(--surface);
-            border-radius: 16px;
-            padding: 14px;
-            box-shadow: 
-                inset 3px 3px 6px var(--shadow-dark),
-                inset -3px -3px 6px var(--shadow-light);
-            font-size: 11px;
-            color: var(--text-secondary);
-            line-height: 1.5;
-        }
-
-        .instructions-card strong {
-            color: var(--text-primary);
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#2563eb">
+  <meta name="description" content="Offline voice-first attendance capture for classrooms.">
+  <link rel="manifest" href="manifest.json">
+  <title>Sabaq Voice Attendance</title>
+  <style>
+    :root {
+      --blue: #2563eb;
+      --blue-dark: #1746b3;
+      --ink: #14213d;
+      --muted: #667085;
+      --surface: #f4f7fb;
+      --white: #ffffff;
+      --line: #e4e9f2;
+      --green: #109567;
+      --red: #dc3f57;
+      --shadow: 10px 10px 24px rgba(39, 61, 94, .12), -8px -8px 20px rgba(255,255,255,.9);
+      --inset: inset 4px 4px 10px rgba(37, 61, 98, .10), inset -4px -4px 10px rgba(255,255,255,.9);
+      font-family: "Space Grotesk", "Inter", ui-sans-serif, system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; color: var(--ink); background: radial-gradient(circle at 90% 0%, #e5efff 0, transparent 30%), var(--surface); }
+    button, textarea { font: inherit; }
+    button { border: 0; cursor: pointer; }
+    .app-shell { width: min(100%, 760px); margin: 0 auto; padding: 22px 18px calc(34px + env(safe-area-inset-bottom)); }
+    .topbar { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 28px; }
+    .brand-mark { display: inline-flex; align-items: center; gap: 8px; color: var(--blue); font-weight: 800; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; }
+    .brand-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--blue); box-shadow: 0 0 0 5px #dce8ff; }
+    h1 { margin: 8px 0 0; font-size: clamp(30px, 8vw, 48px); letter-spacing: -.05em; line-height: .96; max-width: 420px; }
+    .install-btn { display: none; background: var(--ink); color: #fff; padding: 12px 14px; border-radius: 13px; font-weight: 700; box-shadow: 0 8px 18px rgba(20,33,61,.15); }
+    .install-btn.visible { display: block; }
+    .status-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+    .status-pill { display: inline-flex; align-items: center; gap: 9px; padding: 10px 14px; border-radius: 999px; background: var(--white); box-shadow: var(--shadow); color: var(--muted); font-size: 13px; font-weight: 700; }
+    .status-light { width: 9px; height: 9px; border-radius: 50%; background: #98a2b3; }
+    .status-pill.recording { color: var(--red); } .status-pill.recording .status-light { background: var(--red); animation: blink 1.2s infinite; }
+    .status-pill.processing { color: var(--blue); } .status-pill.processing .status-light { background: var(--blue); animation: blink .8s infinite; }
+    .date-label { color: var(--muted); font-size: 12px; font-weight: 700; text-align: right; }
+    .hero-panel { background: var(--white); border: 1px solid rgba(255,255,255,.8); border-radius: 28px; padding: 24px 18px 18px; box-shadow: var(--shadow); }
+    .mic-wrap { display: grid; place-items: center; margin: 3px 0 22px; }
+    .mic-button { position: relative; width: 148px; height: 148px; display: grid; place-items: center; border-radius: 50%; color: #fff; background: linear-gradient(145deg, #3378ff, #1e54cb); box-shadow: 12px 13px 24px rgba(37,99,235,.28), -8px -8px 18px #fff; transition: transform .2s ease, box-shadow .2s ease; }
+    .mic-button:active { transform: scale(.96); }
+    .mic-button.recording { box-shadow: 0 0 0 13px rgba(220,63,87,.12), 0 0 0 27px rgba(220,63,87,.06), 12px 13px 24px rgba(220,63,87,.28); background: linear-gradient(145deg, #ef5d70, #c62e4a); animation: breathe 1.7s infinite; }
+    .mic-button svg { width: 48px; height: 48px; }
+    .mic-label { margin-top: 14px; text-align: center; font-weight: 800; font-size: 16px; }
+    .mic-hint { color: var(--muted); text-align: center; font-size: 12px; margin: 6px 0 0; }
+    .entry-heading { display: flex; justify-content: space-between; align-items: center; margin: 21px 2px 9px; }
+    .entry-heading h2 { margin: 0; font-size: 16px; letter-spacing: -.02em; }
+    .count { color: var(--blue); font-size: 12px; font-weight: 800; }
+    textarea { width: 100%; min-height: 158px; resize: vertical; border: 0; outline: 0; border-radius: 18px; padding: 17px; color: var(--ink); background: #edf2f8; box-shadow: var(--inset); line-height: 1.65; font-size: 16px; }
+    textarea::placeholder { color: #9aa6b8; }
+    .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; margin-top: 16px; }
+    .action-btn { min-height: 53px; border-radius: 15px; display: inline-flex; justify-content: center; align-items: center; gap: 8px; padding: 12px 10px; color: var(--ink); background: #eef3f9; box-shadow: 5px 6px 12px rgba(49,70,102,.10), -4px -4px 9px #fff; font-size: 13px; font-weight: 800; }
+    .action-btn:active { box-shadow: var(--inset); transform: translateY(1px); }
+    .action-btn.primary { color: #fff; background: var(--blue); box-shadow: 5px 6px 13px rgba(37,99,235,.28); }
+    .action-btn.danger { color: var(--red); }
+    .footer-note { display: flex; justify-content: center; gap: 7px; align-items: center; margin: 21px 0 0; color: var(--muted); font-size: 11px; font-weight: 700; }
+    .lock { color: var(--green); }
+    .modal-backdrop { position: fixed; inset: 0; z-index: 4; display: none; place-items: end center; padding: 18px; background: rgba(20,33,61,.32); backdrop-filter: blur(5px); }
+    .modal-backdrop.open { display: grid; }
+    .modal { width: min(100%, 430px); padding: 22px; border-radius: 24px; background: var(--white); box-shadow: 0 24px 60px rgba(20,33,61,.25); }
+    .modal h2 { margin: 0 0 8px; font-size: 21px; } .modal p { margin: 0 0 19px; color: var(--muted); font-size: 14px; line-height: 1.5; }
+    .modal-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .modal-actions button { min-height: 48px; border-radius: 13px; font-weight: 800; } .cancel { background: #eef3f9; color: var(--ink); } .confirm { color: #fff; background: var(--red); }
+    @keyframes blink { 50% { opacity: .35; } } @keyframes breathe { 50% { transform: scale(1.025); } }
+    @media (min-width: 600px) { .app-shell { padding-top: 36px; } .hero-panel { padding: 30px; } .actions { grid-template-columns: repeat(3, 1fr); } .modal-backdrop { place-items: center; } }
+  </style>
 </head>
 <body>
-
-<div class="container">
-    <div class="header-card">
-        <div class="brand-info">
-            <h1>Pulse ID</h1>
-            <p>Real-Time Voice Stream</p>
-        </div>
-        <div class="date-pill" id="datePill">--/--</div>
-    </div>
-
-    <div class="live-status-bar">
-        <div class="status-badge" id="statusBadge">
-            <div class="pulse-dot"></div>
-            <span id="statusText">Mic Off</span>
-        </div>
-        <div class="live-stream-text" id="liveStream">...</div>
-    </div>
-
-    <div class="textarea-recessed">
-        <textarea id="attendanceBox" placeholder="Start speaking digits..."></textarea>
-    </div>
-
-    <div class="controls-grid">
-        <button class="btn btn-start" onclick="startRecognition()">
-            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
-            Start Mic
+  <main class="app-shell">
+    <header class="topbar">
+      <div><div class="brand-mark"><span class="brand-dot"></span> Sabaq Labs</div><h1>Voice attendance.</h1></div>
+      <button id="installAppBtn" class="install-btn" type="button">Install app</button>
+    </header>
+    <section class="status-row" aria-live="polite">
+      <div id="statusPill" class="status-pill"><span class="status-light"></span><span id="statusText">Ready to listen</span></div>
+      <div id="dateLabel" class="date-label"></div>
+    </section>
+    <section class="hero-panel">
+      <div class="mic-wrap">
+        <button id="micButton" class="mic-button" type="button" aria-label="Start voice recording" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="2.5" width="8" height="13" rx="4"></rect><path d="M5 11.5a7 7 0 0 0 14 0M12 18.5v3M8.5 21.5h7"></path></svg>
         </button>
-        <button class="btn btn-stop" onclick="stopRecognition()">
-            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
-            Stop Mic
-        </button>
-        <button class="btn" onclick="downloadCSV()">
-            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Export CSV
-        </button>
-        <button class="btn" style="color: var(--success);" onclick="shareWhatsApp()">
-            <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>
-            WhatsApp
-        </button>
-        <button class="btn btn-full" style="color: var(--text-secondary);" onclick="clearData()">Clear All Data</button>
-    </div>
-
-    <div class="instructions-card">
-        ⚡ <strong>Low Latency Stream:</strong> Captures audio chunks instantly with continuous buffer tracking.<br>
-        💾 <strong>Auto-Saved:</strong> Stores data locally in real time.
-    </div>
-</div>
-
+        <div id="micLabel" class="mic-label">Tap to record</div>
+        <p class="mic-hint">Say student numbers one by one</p>
+      </div>
+      <div class="entry-heading"><h2>Today's attendance</h2><span id="countLabel" class="count">0 entries</span></div>
+      <textarea id="attendanceInput" spellcheck="false" aria-label="Attendance entries" placeholder="Your recognized numbers will appear here...\n\nYou can also type or edit them manually."></textarea>
+      <div class="actions">
+        <button id="exportCsvBtn" class="action-btn primary" type="button"><span aria-hidden="true">↓</span> Export CSV</button>
+        <button id="shareBtn" class="action-btn" type="button"><span aria-hidden="true">↗</span> WhatsApp share</button>
+        <button id="clearBtn" class="action-btn danger" type="button"><span aria-hidden="true">×</span> Clear data</button>
+      </div>
+    </section>
+    <p class="footer-note"><span class="lock">●</span> Stored privately on this device · works offline</p>
+  </main>
+  <div id="clearModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal"><h2 id="modalTitle">Clear attendance?</h2><p>This removes today's entries from this device. This action cannot be undone.</p><div class="modal-actions"><button id="cancelClear" class="cancel" type="button">Keep entries</button><button id="confirmClear" class="confirm" type="button">Clear data</button></div></div>
+  </div>
 <script>
-    const statusBadge = document.getElementById('statusBadge');
-    const statusText = document.getElementById('statusText');
-    const liveStream = document.getElementById('liveStream');
-    const attendanceBox = document.getElementById('attendanceBox');
-    const datePill = document.getElementById('datePill');
-    
-    let recognition;
-    let isListening = false;
-    let processedResultIndex = 0;
+(() => {
+  'use strict';
+  const STORAGE_KEY = 'sabaq-voice-attendance-v1';
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const input = document.getElementById('attendanceInput');
+  const micButton = document.getElementById('micButton');
+  const micLabel = document.getElementById('micLabel');
+  const statusPill = document.getElementById('statusPill');
+  const statusText = document.getElementById('statusText');
+  const countLabel = document.getElementById('countLabel');
+  const dateLabel = document.getElementById('dateLabel');
+  const state = { recording: false, restarting: false, restartTimer: null, commitTimer: null, records: [], activeDigits: '', streamDigits: '', paused: false };
+  dateLabel.textContent = new Intl.DateTimeFormat(undefined, { weekday: 'short', month: 'short', day: 'numeric' }).format(new Date());
 
-    function getTodayDateString() {
-        const today = new Date();
-        const dd = String(today.getDate()).padStart(2, '0');
-        const mm = String(today.getMonth() + 1).padStart(2, '0');
-        const yyyy = today.getFullYear();
-        return { short: `${dd}/${mm}`, full: `${dd}-${mm}-${yyyy}` };
+  function normalize(value) { return value.toLowerCase().replace(/\s+/g, ' ').trim(); }
+  function renderView(preview = '') { input.value = [...state.records, preview].filter(Boolean).join('\n'); countLabel.textContent = state.records.length + (state.records.length === 1 ? ' entry' : ' entries'); }
+  function updateView() { renderView(); localStorage.setItem(STORAGE_KEY, JSON.stringify(state.records)); }
+  function setStatus(mode, text) { statusPill.className = 'status-pill ' + mode; statusText.textContent = text; }
+  function digitsOnly(value) { return String(value).replace(/\D/g, ''); }
+  function addRecords(values) {
+    values.map(digitsOnly).filter(value => value.length >= 8).forEach(value => { if (!state.records.includes(value)) state.records.push(value); });
+    updateView();
+  }
+  function numberWordsToDigits(text) {
+    const aliases = { zero:'0', oh:'0', one:'1', ek:'1', aik:'1', two:'2', to:'2', too:'2', do:'2', dou:'2', three:'3', teen:'3', four:'4', for:'4', char:'4', chaar:'4', chawwan:'54', pawan:'54', five:'5', six:'6', seven:'7', eight:'8', nine:'9', nau:'9', pachpan:'55', fifty:'5' };
+    return text.toLowerCase().replace(/-/g, ' ').match(/\d+|[a-z]+/g)?.map(token => /^\d+$/.test(token) ? token : (aliases[token] ?? '')).join('') || '';
+  }
+  function extractDigits(text) {
+    return numberWordsToDigits(text);
+  }
+  function renderActiveDigits() {
+    if (!state.activeDigits) return;
+    renderView(state.activeDigits);
+    setStatus('processing', 'Captured ' + state.activeDigits.length + '/8 digits');
+  }
+  function commitCompleteDigits() {
+    if (state.activeDigits.length < 8) return;
+    const digits = state.activeDigits.slice(0, 8);
+    state.activeDigits = state.activeDigits.slice(8);
+    clearTimeout(state.commitTimer);
+    addRecords([digits]);
+    if (state.activeDigits.length >= 8) commitCompleteDigits();
+    else if (state.activeDigits) renderActiveDigits();
+  }
+  function scheduleActiveCommit() {
+    clearTimeout(state.commitTimer);
+    state.commitTimer = setTimeout(() => {
+      state.paused = true;
+      if (state.activeDigits.length < 8) setStatus('processing', 'Paused at ' + state.activeDigits.length + '/8 digits');
+    }, 420);
+  }
+  function processSpeechFrame(rawText) {
+    const parsedDigits = extractDigits(rawText);
+    if (!parsedDigits) return;
+    let freshDigits = parsedDigits;
+    if (state.streamDigits && parsedDigits.startsWith(state.streamDigits)) freshDigits = parsedDigits.slice(state.streamDigits.length);
+    else if (!state.paused && state.streamDigits && state.streamDigits.startsWith(parsedDigits)) return;
+    state.paused = false;
+    state.streamDigits = parsedDigits;
+    if (!freshDigits) return;
+    state.activeDigits += freshDigits;
+    renderActiveDigits();
+    if (state.activeDigits.length >= 8) {
+      commitCompleteDigits();
+      state.streamDigits = parsedDigits.slice(0, Math.max(0, parsedDigits.length - state.activeDigits.length));
+      renderActiveDigits();
     }
-
-    const dateInfo = getTodayDateString();
-    datePill.textContent = dateInfo.short;
-
-    window.onload = () => {
-        const savedData = localStorage.getItem('attendance_data');
-        if (savedData) {
-            attendanceBox.value = savedData;
-        }
+    if (state.activeDigits) scheduleActiveCommit();
+  }
+  function stopRecognition() { if (recognition) { state.restarting = false; clearTimeout(state.restartTimer); recognition.stop(); } }
+  function restartRecognition() {
+    if (!state.recording || !recognition || state.restarting) return;
+    state.restarting = true; clearTimeout(state.restartTimer); state.restartTimer = setTimeout(() => { if (state.recording) { try { recognition.start(); } catch (_) {} } state.restarting = false; }, 180);
+  }
+  let recognition = null;
+  if (SpeechRecognition) {
+    recognition = new SpeechRecognition(); recognition.continuous = true; recognition.interimResults = true; recognition.lang = 'en-IN'; recognition.maxAlternatives = 1;
+    recognition.onstart = () => { setStatus('recording', 'Listening now'); micLabel.textContent = 'Tap to stop'; micButton.classList.add('recording'); micButton.setAttribute('aria-pressed', 'true'); };
+    recognition.onresult = event => {
+      let frameText = '';
+      for (let index = 0; index < event.results.length; index += 1) frameText += event.results[index][0].transcript + ' ';
+      processSpeechFrame(frameText);
+      if (frameText.trim()) setStatus('processing', 'Processing voice');
     };
-
-    function saveData() {
-        localStorage.setItem('attendance_data', attendanceBox.value);
-    }
-
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        recognition = new SpeechRecognition();
-        recognition.continuous = true;
-        recognition.interimResults = true;
-        recognition.lang = 'en-US';
-
-        recognition.onstart = () => {
-            isListening = true;
-            statusText.textContent = "Listening...";
-            statusBadge.classList.add('active');
-        };
-
-        recognition.onresult = (event) => {
-            let interimText = '';
-
-            // Fast-path processing for finalized frames
-            for (let i = processedResultIndex; i < event.results.length; ++i) {
-                if (event.results[i].isFinal) {
-                    appendDigitChunk(event.results[i][0].transcript);
-                    processedResultIndex = i + 1;
-                } else {
-                    interimText += event.results[i][0].transcript;
-                }
-            }
-
-            const cleanInterim = interimText.replace(/\D/g, '');
-            liveStream.textContent = cleanInterim || '...';
-        };
-
-        recognition.onerror = (event) => {
-            console.error('Speech Recognition Error:', event.error);
-        };
-
-        recognition.onend = () => {
-            if (isListening) {
-                // Instantly re-arm recognition context
-                recognition.start();
-            } else {
-                statusText.textContent = "Mic Off";
-                statusBadge.classList.remove('active');
-                liveStream.textContent = '...';
-            }
-        };
-    } else {
-        alert("Speech Recognition API is not supported by this browser. Please use Chrome.");
-    }
-
-    function startRecognition() {
-        if (recognition && !isListening) {
-            isListening = true;
-            processedResultIndex = 0;
-            recognition.start();
-        }
-    }
-
-    function stopRecognition() {
-        if (recognition && isListening) {
-            isListening = false;
-            recognition.stop();
-        }
-    }
-
-    // Direct insertion pipeline ensuring zero string re-parsing lag
-    function appendDigitChunk(speechText) {
-        const newDigits = speechText.replace(/\D/g, '');
-        if (!newDigits) return;
-
-        let currentValue = attendanceBox.value;
-        
-        for (let char of newDigits) {
-            // Retrieve length of the active line segment
-            const lines = currentValue.split('\n');
-            const currentLine = lines[lines.length - 1];
-
-            if (currentLine.length >= 8) {
-                currentValue += '\n' + char;
-            } else {
-                currentValue += char;
-            }
-        }
-
-        attendanceBox.value = currentValue;
-        saveData();
-        attendanceBox.scrollTop = attendanceBox.scrollHeight;
-    }
-
-    attendanceBox.addEventListener('input', () => {
-        saveData();
-    });
-
-    function downloadCSV() {
-        const content = attendanceBox.value.trim();
-        if (!content) {
-            alert("No records to export.");
-            return;
-        }
-
-        const rows = content.split('\n').filter(r => r.trim() !== '');
-        let csvContent = "data:text/csv;charset=utf-8,S.No,Attendance_ID\n";
-
-        rows.forEach((id, index) => {
-            csvContent += `${index + 1},${id}\n`;
-        });
-
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `Attendance_${dateInfo.full}.csv`);
-        document.body.appendChild(link);
-
-        link.click();
-        document.body.removeChild(link);
-    }
-
-    function shareWhatsApp() {
-        const content = attendanceBox.value.trim();
-        if (!content) {
-            alert("Attendance box is empty.");
-            return;
-        }
-
-        const message = `*Attendance Record (${dateInfo.full})*\n\n` + content;
-        window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
-    }
-
-    function clearData() {
-        if (confirm("Clear all recorded entries?")) {
-            attendanceBox.value = '';
-            localStorage.removeItem('attendance_data');
-            liveStream.textContent = '...';
-            processedResultIndex = 0;
-        }
-    }
+    recognition.onerror = event => {
+      const messages = { 'not-allowed': 'Microphone permission blocked', 'service-not-allowed': 'Speech service unavailable', 'audio-capture': 'No microphone found', network: 'Speech service offline' };
+      if (event.error === 'aborted' || event.error === 'no-speech') return;
+      state.recording = false; clearTimeout(state.restartTimer); setStatus('processing', messages[event.error] || 'Could not hear you'); micLabel.textContent = 'Tap to try again'; micButton.classList.remove('recording'); micButton.setAttribute('aria-pressed', 'false');
+    };
+    recognition.onend = () => { if (state.recording) { setStatus('processing', 'Reconnecting microphone'); restartRecognition(); } else { setStatus('', 'Ready to listen'); micLabel.textContent = 'Tap to record'; micButton.classList.remove('recording'); } };
+  }
+  function toggleRecording() {
+    if (!recognition) { setStatus('processing', 'Voice recognition unavailable'); return; }
+    if (state.recording) { state.recording = false; stopRecognition(); setStatus('', 'Ready to listen'); micLabel.textContent = 'Tap to record'; micButton.classList.remove('recording'); micButton.setAttribute('aria-pressed', 'false'); }
+    else { state.recording = true; state.activeDigits = ''; state.streamDigits = ''; state.paused = false; clearTimeout(state.commitTimer); try { recognition.start(); } catch (_) { restartRecognition(); } }
+  }
+  micButton.addEventListener('click', toggleRecording);
+  input.addEventListener('input', () => { state.records = input.value.split(/\n+/).map(digitsOnly).filter(value => value.length >= 8); updateView(); });
+  document.getElementById('exportCsvBtn').addEventListener('click', () => {
+    const rows = [['Date', 'Student Number'], ...state.records.map(value => [new Date().toISOString().slice(0, 10), value])];
+    const csv = rows.map(row => row.map(cell => '"' + String(cell).replace(/"/g, '""') + '"').join(',')).join('\r\n');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' }); const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = 'sabaq-attendance-' + new Date().toISOString().slice(0, 10) + '.csv'; link.click(); URL.revokeObjectURL(url);
+  });
+  document.getElementById('shareBtn').addEventListener('click', async () => {
+    const csv = [['Date', 'Student Number'], ...state.records.map(value => [new Date().toISOString().slice(0, 10), value])].map(row => row.join(',')).join('\n');
+    const file = new File(['\ufeff' + csv], 'sabaq-attendance-' + new Date().toISOString().slice(0, 10) + '.csv', { type: 'text/csv' });
+    if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) { try { await navigator.share({ title: 'Sabaq attendance', text: 'Attendance for ' + dateLabel.textContent, files: [file] }); return; } catch (error) { if (error.name === 'AbortError') return; } }
+    const message = 'Attendance - ' + dateLabel.textContent + '\n' + state.records.map((value, index) => (index + 1) + '. ' + value).join('\n');
+    window.location.href = 'whatsapp://send?text=' + encodeURIComponent(message);
+  });
+  const modal = document.getElementById('clearModal');
+  document.getElementById('clearBtn').addEventListener('click', () => modal.classList.add('open'));
+  document.getElementById('cancelClear').addEventListener('click', () => modal.classList.remove('open'));
+  document.getElementById('confirmClear').addEventListener('click', () => { state.records = []; state.activeDigits = ''; state.streamDigits = ''; clearTimeout(state.commitTimer); updateView(); modal.classList.remove('open'); });
+  const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); if (Array.isArray(saved)) state.records = saved.map(digitsOnly).filter(value => value.length >= 8); updateView();
+  let deferredInstallPrompt = null; const installButton = document.getElementById('installAppBtn');
+  window.addEventListener('beforeinstallprompt', event => { event.preventDefault(); deferredInstallPrompt = event; installButton.classList.add('visible'); });
+  installButton.addEventListener('click', async () => { if (!deferredInstallPrompt) return; deferredInstallPrompt.prompt(); await deferredInstallPrompt.userChoice; deferredInstallPrompt = null; installButton.classList.remove('visible'); });
+  if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+})();
 </script>
-
 </body>
 </html>
