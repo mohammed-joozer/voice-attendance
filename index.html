@@ -112,7 +112,7 @@
   const statusText = document.getElementById('statusText');
   const countLabel = document.getElementById('countLabel');
   const dateLabel = document.getElementById('dateLabel');
-  const state = { recording: false, restarting: false, restartTimer: null, commitTimer: null, records: [], activeDigits: '', streamDigits: '', paused: false, lockedIds: new Set() };
+  const state = { recording: false, restarting: false, restartTimer: null, records: [], activeDigits: '', lockedIds: new Set() };
   dateLabel.textContent = new Intl.DateTimeFormat(undefined, { weekday: 'short', month: 'short', day: 'numeric' }).format(new Date());
 
   function normalize(value) { return value.toLowerCase().replace(/\s+/g, ' ').trim(); }
@@ -140,36 +140,22 @@
     renderView(state.activeDigits);
     setStatus('processing', 'Captured ' + state.activeDigits.length + '/8 digits');
   }
-  function commitCompleteDigits(digits = state.activeDigits) {
-    if (digits.length < 8) return;
-    const complete = [];
-    for (let offset = 0; offset + 8 <= digits.length; offset += 8) complete.push(digits.slice(offset, offset + 8));
-    state.activeDigits = digits.slice(complete.length * 8);
-    clearTimeout(state.commitTimer);
-    addRecords(complete);
-    if (state.activeDigits.length >= 8) commitCompleteDigits(state.activeDigits);
-    else if (state.activeDigits) renderActiveDigits();
-  }
-  function scheduleActiveCommit() {
-    clearTimeout(state.commitTimer);
-    state.commitTimer = setTimeout(() => {
-      state.paused = true;
-      if (state.activeDigits.length < 8) setStatus('processing', 'Paused at ' + state.activeDigits.length + '/8 digits');
-    }, 420);
-  }
-  function processSpeechFrame(rawText, isFinal = false) {
-    const parsedDigits = extractDigits(rawText);
-    if (!parsedDigits) return;
-    if (parsedDigits.length < state.activeDigits.length && parsedDigits === state.activeDigits.slice(0, parsedDigits.length)) return;
-    if (parsedDigits === state.activeDigits) { if (isFinal) commitCompleteDigits(parsedDigits); return; }
-    state.paused = false;
-    state.activeDigits = parsedDigits;
+  function looksLikeCombination(digits) { return digits.length === 8 && digits.slice(0, 4) === digits.slice(4); }
+  function processInterim(rawText) {
+    const digits = extractDigits(rawText);
+    if (!digits || digits.length > 8) return;
+    state.activeDigits = digits;
     renderActiveDigits();
-    if (state.activeDigits.length >= 8) {
-      commitCompleteDigits();
-      renderActiveDigits();
+  }
+  function processFinal(rawText, confidence = 1) {
+    const digits = extractDigits(rawText);
+    state.activeDigits = '';
+    if (digits.length !== 8 || looksLikeCombination(digits) || confidence < 0.62) {
+      renderView();
+      setStatus('processing', confidence < 0.62 ? 'Unclear speech, please repeat' : digits.length > 8 ? 'Too many digits, please repeat' : 'Need exactly 8 digits, please repeat');
+      return;
     }
-    if (state.activeDigits) scheduleActiveCommit();
+    addRecords([digits]);
   }
   function stopRecognition() { if (recognition) { state.restarting = false; clearTimeout(state.restartTimer); recognition.stop(); } }
   function restartRecognition() {
@@ -178,17 +164,13 @@
   }
   let recognition = null;
   if (SpeechRecognition) {
-    recognition = new SpeechRecognition(); recognition.continuous = true; recognition.interimResults = true; recognition.lang = 'en-IN'; recognition.maxAlternatives = 1;
-    recognition.onstart = () => { setStatus('recording', 'Listening now'); micLabel.textContent = 'Tap to stop'; micButton.classList.add('recording'); micButton.setAttribute('aria-pressed', 'true'); };
+    recognition = new SpeechRecognition(); recognition.continuous = false; recognition.interimResults = true; recognition.lang = 'en-IN'; recognition.maxAlternatives = 1;
+    recognition.onstart = () => { state.activeDigits = ''; renderView(); setStatus('recording', 'Listening now'); micLabel.textContent = 'Tap to stop'; micButton.classList.add('recording'); micButton.setAttribute('aria-pressed', 'true'); };
     recognition.onresult = event => {
-      let heardText = '';
-      for (let index = event.resultIndex; index < event.results.length; index += 1) {
-        const result = event.results[index];
-        const transcript = result[0].transcript;
-        heardText += transcript + ' ';
-        processSpeechFrame(transcript, result.isFinal);
-      }
-      if (heardText.trim()) setStatus('processing', 'Processing voice');
+      const result = event.results[event.resultIndex];
+      if (!result) return;
+      const transcript = result[0].transcript;
+      if (result.isFinal) processFinal(transcript, typeof result[0].confidence === 'number' ? result[0].confidence : 1); else processInterim(transcript);
     };
     recognition.onerror = event => {
       const messages = { 'not-allowed': 'Microphone permission blocked', 'service-not-allowed': 'Speech service unavailable', 'audio-capture': 'No microphone found', network: 'Speech service offline' };
@@ -200,7 +182,7 @@
   function toggleRecording() {
     if (!recognition) { setStatus('processing', 'Voice recognition unavailable'); return; }
     if (state.recording) { state.recording = false; stopRecognition(); setStatus('', 'Ready to listen'); micLabel.textContent = 'Tap to record'; micButton.classList.remove('recording'); micButton.setAttribute('aria-pressed', 'false'); }
-    else { state.recording = true; state.activeDigits = ''; state.streamDigits = ''; state.paused = false; clearTimeout(state.commitTimer); try { recognition.start(); } catch (_) { restartRecognition(); } }
+    else { state.recording = true; state.activeDigits = ''; try { recognition.start(); } catch (_) { restartRecognition(); } }
   }
   micButton.addEventListener('click', toggleRecording);
   input.addEventListener('input', () => {
@@ -223,7 +205,7 @@
   const modal = document.getElementById('clearModal');
   document.getElementById('clearBtn').addEventListener('click', () => modal.classList.add('open'));
   document.getElementById('cancelClear').addEventListener('click', () => modal.classList.remove('open'));
-  document.getElementById('confirmClear').addEventListener('click', () => { state.records = []; state.lockedIds.clear(); state.activeDigits = ''; state.streamDigits = ''; clearTimeout(state.commitTimer); updateView(); modal.classList.remove('open'); });
+  document.getElementById('confirmClear').addEventListener('click', () => { state.records = []; state.lockedIds.clear(); state.activeDigits = ''; updateView(); modal.classList.remove('open'); });
   const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); if (Array.isArray(saved)) state.records = saved.map(digitsOnly).filter(value => value.length === 8); state.records.forEach(value => state.lockedIds.add(value)); updateView();
   let deferredInstallPrompt = null; const installButton = document.getElementById('installAppBtn');
   window.addEventListener('beforeinstallprompt', event => { event.preventDefault(); deferredInstallPrompt = event; installButton.classList.add('visible'); });
