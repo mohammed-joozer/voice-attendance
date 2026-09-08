@@ -141,12 +141,6 @@
     setStatus('processing', 'Captured ' + state.activeDigits.length + '/8 digits');
   }
   function looksLikeCombination(digits) { return digits.length === 8 && digits.slice(0, 4) === digits.slice(4); }
-  function processInterim(rawText) {
-    const digits = extractDigits(rawText);
-    if (!digits || digits.length > 8) return;
-    state.activeDigits = digits;
-    renderActiveDigits();
-  }
   function processFinal(rawText, confidence = 1) {
     const digits = extractDigits(rawText);
     state.activeDigits = '';
@@ -165,29 +159,31 @@
   }
   let recognition = null;
   if (SpeechRecognition) {
-    recognition = new SpeechRecognition(); recognition.continuous = false; recognition.interimResults = true; recognition.lang = 'en-IN'; recognition.maxAlternatives = 1;
+    recognition = new SpeechRecognition(); recognition.continuous = false; recognition.interimResults = false; recognition.lang = 'en-IN'; recognition.maxAlternatives = 1;
     recognition.onstart = () => { if (!state.recording) { recognition.stop(); return; } state.activeDigits = ''; state.sessionFinal = false; renderView(); setStatus('recording', 'Listening now'); micLabel.textContent = 'Tap to stop'; micButton.classList.add('recording'); micButton.setAttribute('aria-pressed', 'true'); };
     recognition.onresult = event => {
       const result = event.results[event.resultIndex];
       if (!result) return;
       const transcript = result[0].transcript;
-      if (result.isFinal) {
-        state.sessionFinal = true;
-        processFinal(transcript, typeof result[0].confidence === 'number' ? result[0].confidence : 1);
-        state.recording = false;
-        stopRecognition();
+      state.sessionFinal = true;
+      const accepted = processFinal(transcript, typeof result[0].confidence === 'number' ? result[0].confidence : 1);
+      state.recording = false;
+      stopRecognition();
+      if (accepted) {
         setStatus('', 'Ready for next ID');
         micLabel.textContent = 'Tap to record next ID';
-        micButton.classList.remove('recording');
-        micButton.setAttribute('aria-pressed', 'false');
-      } else processInterim(transcript);
+      } else {
+        micLabel.textContent = 'Tap to try again';
+      }
+      micButton.classList.remove('recording');
+      micButton.setAttribute('aria-pressed', 'false');
     };
     recognition.onerror = event => {
       const messages = { 'not-allowed': 'Microphone permission blocked', 'service-not-allowed': 'Speech service unavailable', 'audio-capture': 'No microphone found', network: 'Speech service offline' };
       if (!state.recording || event.error === 'aborted' || event.error === 'no-speech') return;
       state.recording = false; clearTimeout(state.restartTimer); setStatus('processing', messages[event.error] || 'Could not hear you'); micLabel.textContent = 'Tap to try again'; micButton.classList.remove('recording'); micButton.setAttribute('aria-pressed', 'false');
     };
-    recognition.onend = () => { if (state.recording && !state.sessionFinal) { setStatus('processing', 'Reconnecting microphone'); restartRecognition(); } else if (!state.recording) { micButton.classList.remove('recording'); micButton.setAttribute('aria-pressed', 'false'); } };
+    recognition.onend = () => { if (state.recording && !state.sessionFinal) { state.recording = false; setStatus('processing', 'No clear ID heard, please try again'); micLabel.textContent = 'Tap to try again'; micButton.classList.remove('recording'); micButton.setAttribute('aria-pressed', 'false'); } else if (!state.recording) { micButton.classList.remove('recording'); micButton.setAttribute('aria-pressed', 'false'); } };
   }
   function toggleRecording() {
     if (!recognition) { setStatus('processing', 'Voice recognition unavailable'); return; }
