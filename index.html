@@ -112,7 +112,7 @@
   const statusText = document.getElementById('statusText');
   const countLabel = document.getElementById('countLabel');
   const dateLabel = document.getElementById('dateLabel');
-  const state = { recording: false, restarting: false, restartTimer: null, commitTimer: null, records: [], activeDigits: '', streamDigits: '', paused: false };
+  const state = { recording: false, restarting: false, restartTimer: null, commitTimer: null, records: [], activeDigits: '', streamDigits: '', paused: false, lockedIds: new Set() };
   dateLabel.textContent = new Intl.DateTimeFormat(undefined, { weekday: 'short', month: 'short', day: 'numeric' }).format(new Date());
 
   function normalize(value) { return value.toLowerCase().replace(/\s+/g, ' ').trim(); }
@@ -121,7 +121,11 @@
   function setStatus(mode, text) { statusPill.className = 'status-pill ' + mode; statusText.textContent = text; }
   function digitsOnly(value) { return String(value).replace(/\D/g, ''); }
   function addRecords(values) {
-    values.map(digitsOnly).filter(value => value.length >= 8).forEach(value => { if (!state.records.includes(value)) state.records.push(value); });
+    values.map(digitsOnly).filter(value => value.length === 8).forEach(value => {
+      if (state.lockedIds.has(value)) return;
+      state.lockedIds.add(value);
+      state.records.push(value);
+    });
     updateView();
   }
   function numberWordsToDigits(text) {
@@ -136,13 +140,14 @@
     renderView(state.activeDigits);
     setStatus('processing', 'Captured ' + state.activeDigits.length + '/8 digits');
   }
-  function commitCompleteDigits() {
-    if (state.activeDigits.length < 8) return;
-    const digits = state.activeDigits.slice(0, 8);
-    state.activeDigits = state.activeDigits.slice(8);
+  function commitCompleteDigits(digits = state.activeDigits) {
+    if (digits.length < 8) return;
+    const complete = [];
+    for (let offset = 0; offset + 8 <= digits.length; offset += 8) complete.push(digits.slice(offset, offset + 8));
+    state.activeDigits = digits.slice(complete.length * 8);
     clearTimeout(state.commitTimer);
-    addRecords([digits]);
-    if (state.activeDigits.length >= 8) commitCompleteDigits();
+    addRecords(complete);
+    if (state.activeDigits.length >= 8) commitCompleteDigits(state.activeDigits);
     else if (state.activeDigits) renderActiveDigits();
   }
   function scheduleActiveCommit() {
@@ -152,20 +157,16 @@
       if (state.activeDigits.length < 8) setStatus('processing', 'Paused at ' + state.activeDigits.length + '/8 digits');
     }, 420);
   }
-  function processSpeechFrame(rawText) {
+  function processSpeechFrame(rawText, isFinal = false) {
     const parsedDigits = extractDigits(rawText);
     if (!parsedDigits) return;
-    let freshDigits = parsedDigits;
-    if (state.streamDigits && parsedDigits.startsWith(state.streamDigits)) freshDigits = parsedDigits.slice(state.streamDigits.length);
-    else if (!state.paused && state.streamDigits && state.streamDigits.startsWith(parsedDigits)) return;
+    if (parsedDigits.length < state.activeDigits.length && parsedDigits === state.activeDigits.slice(0, parsedDigits.length)) return;
+    if (parsedDigits === state.activeDigits) { if (isFinal) commitCompleteDigits(parsedDigits); return; }
     state.paused = false;
-    state.streamDigits = parsedDigits;
-    if (!freshDigits) return;
-    state.activeDigits += freshDigits;
+    state.activeDigits = parsedDigits;
     renderActiveDigits();
     if (state.activeDigits.length >= 8) {
       commitCompleteDigits();
-      state.streamDigits = parsedDigits.slice(0, Math.max(0, parsedDigits.length - state.activeDigits.length));
       renderActiveDigits();
     }
     if (state.activeDigits) scheduleActiveCommit();
@@ -180,10 +181,14 @@
     recognition = new SpeechRecognition(); recognition.continuous = true; recognition.interimResults = true; recognition.lang = 'en-IN'; recognition.maxAlternatives = 1;
     recognition.onstart = () => { setStatus('recording', 'Listening now'); micLabel.textContent = 'Tap to stop'; micButton.classList.add('recording'); micButton.setAttribute('aria-pressed', 'true'); };
     recognition.onresult = event => {
-      let frameText = '';
-      for (let index = 0; index < event.results.length; index += 1) frameText += event.results[index][0].transcript + ' ';
-      processSpeechFrame(frameText);
-      if (frameText.trim()) setStatus('processing', 'Processing voice');
+      let heardText = '';
+      for (let index = event.resultIndex; index < event.results.length; index += 1) {
+        const result = event.results[index];
+        const transcript = result[0].transcript;
+        heardText += transcript + ' ';
+        processSpeechFrame(transcript, result.isFinal);
+      }
+      if (heardText.trim()) setStatus('processing', 'Processing voice');
     };
     recognition.onerror = event => {
       const messages = { 'not-allowed': 'Microphone permission blocked', 'service-not-allowed': 'Speech service unavailable', 'audio-capture': 'No microphone found', network: 'Speech service offline' };
@@ -198,7 +203,11 @@
     else { state.recording = true; state.activeDigits = ''; state.streamDigits = ''; state.paused = false; clearTimeout(state.commitTimer); try { recognition.start(); } catch (_) { restartRecognition(); } }
   }
   micButton.addEventListener('click', toggleRecording);
-  input.addEventListener('input', () => { state.records = input.value.split(/\n+/).map(digitsOnly).filter(value => value.length >= 8); updateView(); });
+  input.addEventListener('input', () => {
+    state.records = [...new Set(input.value.split(/\n+/).map(digitsOnly).filter(value => value.length === 8))];
+    state.lockedIds = new Set(state.records);
+    updateView();
+  });
   document.getElementById('exportCsvBtn').addEventListener('click', () => {
     const rows = [['Date', 'Student Number'], ...state.records.map(value => [new Date().toISOString().slice(0, 10), value])];
     const csv = rows.map(row => row.map(cell => '"' + String(cell).replace(/"/g, '""') + '"').join(',')).join('\r\n');
@@ -214,8 +223,8 @@
   const modal = document.getElementById('clearModal');
   document.getElementById('clearBtn').addEventListener('click', () => modal.classList.add('open'));
   document.getElementById('cancelClear').addEventListener('click', () => modal.classList.remove('open'));
-  document.getElementById('confirmClear').addEventListener('click', () => { state.records = []; state.activeDigits = ''; state.streamDigits = ''; clearTimeout(state.commitTimer); updateView(); modal.classList.remove('open'); });
-  const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); if (Array.isArray(saved)) state.records = saved.map(digitsOnly).filter(value => value.length >= 8); updateView();
+  document.getElementById('confirmClear').addEventListener('click', () => { state.records = []; state.lockedIds.clear(); state.activeDigits = ''; state.streamDigits = ''; clearTimeout(state.commitTimer); updateView(); modal.classList.remove('open'); });
+  const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); if (Array.isArray(saved)) state.records = saved.map(digitsOnly).filter(value => value.length === 8); state.records.forEach(value => state.lockedIds.add(value)); updateView();
   let deferredInstallPrompt = null; const installButton = document.getElementById('installAppBtn');
   window.addEventListener('beforeinstallprompt', event => { event.preventDefault(); deferredInstallPrompt = event; installButton.classList.add('visible'); });
   installButton.addEventListener('click', async () => { if (!deferredInstallPrompt) return; deferredInstallPrompt.prompt(); await deferredInstallPrompt.userChoice; deferredInstallPrompt = null; installButton.classList.remove('visible'); });
